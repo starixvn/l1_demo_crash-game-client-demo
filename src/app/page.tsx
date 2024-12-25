@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { socketHandler } from "@/handlers/socket.handler";
 
 interface AuthResponse {
@@ -13,7 +13,11 @@ export default function SplashPage() {
     const [namespace, setNamespace] = useState("");
     const [error, setError] = useState("");
     const [isConnecting, setIsConnecting] = useState(false);
-    const userAgent = "axios/0.27.2";
+    const [userAgent, setUserAgent] = useState("axios/0.27.2");
+
+    useEffect(() => {
+        setUserAgent("axios/0.27.2");
+    }, []);
 
     const SystemInfo = {
         SC1: {
@@ -50,7 +54,6 @@ export default function SplashPage() {
                 domain: "example.com",
                 appType: 1,
             };
-
             const response = await fetch(`${process.env.NEXT_PUBLIC_SIMULATOR_URL}/signin/sso`, {
                 method: "POST",
                 headers: {
@@ -74,11 +77,10 @@ export default function SplashPage() {
 
     const authorize = async (token: string): Promise<void> => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/auth/authorize`, {
-                method: "POST",
+            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/auth/sso?token=${token}&system=1`, {
+                method: "GET",
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+                    "user-agent": userAgent,
                 },
             });
 
@@ -122,8 +124,9 @@ export default function SplashPage() {
                         type="text"
                         value={namespace}
                         onChange={(e) => setNamespace(e.target.value)}
-                        placeholder="Enter socket namespace"
-                        className="w-full p-2 border rounded"
+                        placeholder="Enter socket name"
+                        className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                        disabled={isConnecting}
                     />
                 </div>
 

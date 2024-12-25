@@ -86,7 +86,7 @@ export class SocketHandler {
         return this.namespace;
     }
 
-    onEvent(callback: (event: string, data: any) => void): void {
+    onEvent(callback: (event: string, data: object) => void): void {
         if (!this.socket) return;
 
         // Add your event listeners here
@@ -96,7 +96,7 @@ export class SocketHandler {
         });
     }
 
-    emit(event: string, data: any): void {
+    emit(event: string, data: object): void {
         if (!this.socket) return;
         this.socket.emit(event, data);
     }
