@@ -48,7 +48,7 @@ export class SocketHandler {
                     forceNew: true,
                     transports: ["websocket"],
                     upgrade: false,
-                    path: `/${namespace}/socket.io`,
+                    path: `/socket.io`,
                     extraHeaders: {
                         "user-agent": this.config.userAgent,
                         ...(token && { authorization: `Bearer ${token}` }),
@@ -107,6 +107,59 @@ export class SocketHandler {
             this.socket = null;
             this.namespace = "";
         }
+    }
+
+    public onMessage(callback: (message: object) => void): void {
+        this.socket?.on("message", callback);
+    }
+
+    public removeMessageListener(): void {
+        this.socket?.removeAllListeners("message");
+    }
+
+    public async requestSignIn(authorizeInfo: any): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if (!this.socket) return reject(new Error("Socket not connected"));
+
+            this.socket.emit("signin", authorizeInfo);
+
+            this.socket.on("signedIn", () => {
+                resolve(true);
+            });
+
+            this.socket.on("toGame", () => {
+                resolve(true);
+            });
+
+            this.socket.on("message", (data) => {
+                if (data.unauthorized || data.notPermittedToPlay) {
+                    resolve(false);
+                }
+            });
+
+            setTimeout(() => {
+                reject(new Error("signIn - time out"));
+            }, this.config.connectionTimeout);
+        });
+    }
+
+    public async requestInGame(gameInfo: { name: string }): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if (!this.socket) return reject(new Error("Socket not connected"));
+
+            this.socket.emit("inGame");
+
+            this.socket.on(gameInfo.name, (data) => {
+                if (data.gameConfigs) {
+                    console.log(JSON.stringify(data.roundHistory));
+                    resolve(true);
+                }
+            });
+
+            setTimeout(() => {
+                reject(new Error("inGame - time out"));
+            }, this.config.connectionTimeout);
+        });
     }
 }
 
