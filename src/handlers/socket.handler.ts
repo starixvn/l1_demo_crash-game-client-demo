@@ -28,6 +28,7 @@ export class SocketHandler {
         userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         connectionTimeout: 5000,
     };
+    private messageHandler: ((event: string, data: object) => void) | null = null;
 
     private constructor(private socketConfig: SocketConfig) {
         this.config = socketConfig;
@@ -109,12 +110,21 @@ export class SocketHandler {
         }
     }
 
-    public onMessage(callback: (message: object) => void): void {
-        this.socket?.on("message", callback);
+    public onMessage(callback: (event: string, message: object) => void): void {
+        // Store the handler function so we can remove it later
+        this.messageHandler = (event, data) => {
+            if (event === "message") {
+                callback(event, data);
+            }
+        };
+        this.socket?.onAny(this.messageHandler);
     }
 
     public removeMessageListener(): void {
-        this.socket?.removeAllListeners("message");
+        if (this.messageHandler) {
+            this.socket?.offAny(this.messageHandler);
+            this.messageHandler = null;
+        }
     }
 
     public async requestSignIn(authorizeInfo: any): Promise<boolean> {

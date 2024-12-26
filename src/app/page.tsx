@@ -18,11 +18,6 @@ export default function SplashPage() {
     useEffect(() => {
         setUserAgent(window.navigator.userAgent);
 
-        // Set up socket message listener
-        socketHandler.onMessage((message: object) => {
-            setMessages((prev) => [...prev, JSON.stringify(message)]);
-        });
-
         return () => {
             socketHandler.removeMessageListener();
         };
@@ -115,6 +110,10 @@ export default function SplashPage() {
             const authorizeInfo = await authorize(token);
 
             await socketHandler.connect(namespace);
+            socketHandler.onMessage((event: string, message: object) => {
+                setMessages((prev) => [...prev, `[${event}] - ${JSON.stringify(message)}`]);
+            });
+
             await socketHandler.requestSignIn(authorizeInfo);
             await socketHandler.requestInGame({ name: "CoinTap" });
         } catch (err) {
