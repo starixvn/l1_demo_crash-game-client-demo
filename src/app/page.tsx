@@ -116,7 +116,7 @@ export default function SplashPage() {
 
             await socketHandler.connect(namespace);
             await socketHandler.requestSignIn(authorizeInfo);
-            await socketHandler.requestInGame({ name: namespace });
+            await socketHandler.requestInGame({ name: "CoinTap" });
         } catch (err) {
             setError(`Connection failed: ${err}`);
         } finally {

@@ -147,14 +147,14 @@ export class SocketHandler {
         return new Promise((resolve, reject) => {
             if (!this.socket) return reject(new Error("Socket not connected"));
 
-            this.socket.emit("inGame");
-
             this.socket.on(gameInfo.name, (data) => {
                 if (data.gameConfigs) {
                     console.log(JSON.stringify(data.roundHistory));
                     resolve(true);
                 }
             });
+
+            this.socket.emit("inGame");
 
             setTimeout(() => {
                 reject(new Error("inGame - time out"));
