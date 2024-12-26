@@ -67,8 +67,6 @@ export default function SplashPage() {
                 body: JSON.stringify(requestBody),
             });
 
-            console.log("simulator url: ", process.env.NEXT_PUBLIC_SIMULATOR_URL);
-
             if (!response.ok) {
                 throw new Error("Failed to get SSO token");
             }
@@ -131,7 +129,7 @@ export default function SplashPage() {
             const jsonData = JSON.parse(jsonString);
             socketHandler.emit(messageNamespace || "message", jsonData);
         } catch (err: unknown) {
-            setError("Invalid format");
+            setError(`Invalid format: ${err}`);
         }
     };
 
