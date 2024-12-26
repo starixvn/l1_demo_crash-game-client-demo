@@ -14,6 +14,7 @@ export default function SplashPage() {
     const [userAgent, setUserAgent] = useState("axios/0.27.2");
     const [messages, setMessages] = useState<string[]>([]);
     const [jsonInput, setJsonInput] = useState("");
+    const [messageNamespace, setMessageNamespace] = useState("");
 
     useEffect(() => {
         setUserAgent(window.navigator.userAgent);
@@ -125,14 +126,10 @@ export default function SplashPage() {
 
     const handleSubmitMessage = () => {
         try {
-            // Convert object-like string to valid JSON
-            const jsonString = jsonInput
-                .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":') // Convert keys to quoted strings
-                .replace(/'/g, '"'); // Replace single quotes with double quotes
+            const jsonString = jsonInput.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":').replace(/'/g, '"');
 
             const jsonData = JSON.parse(jsonString);
-            socketHandler.emit("message", jsonData);
-            setJsonInput("");
+            socketHandler.emit(messageNamespace || "message", jsonData);
         } catch (err: unknown) {
             setError("Invalid format");
         }
@@ -211,7 +208,14 @@ export default function SplashPage() {
                 <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
                     <h2 className="text-xl font-semibold text-white mb-4">Send Message</h2>
                     <div className="space-y-4">
-                        <div className="flex gap-2"></div>
+                        <input
+                            type="text"
+                            value={messageNamespace}
+                            onChange={(e) => setMessageNamespace(e.target.value)}
+                            placeholder="Enter namespace (default: message)"
+                            className="w-full p-3 border border-gray-700 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={!socketHandler.isConnected()}
+                        />
                         <textarea
                             value={jsonInput}
                             onChange={(e) => setJsonInput(e.target.value)}
