@@ -114,10 +114,6 @@ export default function SplashPage() {
                 setMessages((prev) => [...prev, `[${event}] - ${JSON.stringify(message)}`]);
             });
 
-            socketHandler.onMessage((event: string, message: object) => {
-                setMessages((prev) => [...prev, `[${event}] - ${JSON.stringify(message)}`]);
-            });
-
             await socketHandler.requestSignIn(authorizeInfo);
             await socketHandler.requestInGame({ name: socketNamespace });
         } catch (err) {
