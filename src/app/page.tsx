@@ -110,7 +110,7 @@ export default function SplashPage() {
             await socketHandler.connect(namespace);
             const socketNamespace = "CoinTap";
             socketHandler.onMessage((event: string, message: object) => {
-                setMessages((prev) => [...prev, `[${event}] - ${JSON.stringify(message)}`]);
+                setMessages((prev) => [`[${event}] - ${JSON.stringify(message)}`, ...prev]);
             });
 
             await socketHandler.requestSignIn(authorizeInfo);
