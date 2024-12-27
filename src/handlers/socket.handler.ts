@@ -113,9 +113,7 @@ export class SocketHandler {
     public onMessage(callback: (event: string, message: object) => void): void {
         // Store the handler function so we can remove it later
         this.messageHandler = (event, data) => {
-            if (event === "message") {
-                callback(event, data);
-            }
+            callback(event, data);
         };
         this.socket?.onAny(this.messageHandler);
     }

@@ -109,12 +109,17 @@ export default function SplashPage() {
             const authorizeInfo = await authorize(token);
 
             await socketHandler.connect(namespace);
+            const socketNamespace = "CoinTap";
+            socketHandler.onMessage((event: string, message: object) => {
+                setMessages((prev) => [...prev, `[${event}] - ${JSON.stringify(message)}`]);
+            });
+
             socketHandler.onMessage((event: string, message: object) => {
                 setMessages((prev) => [...prev, `[${event}] - ${JSON.stringify(message)}`]);
             });
 
             await socketHandler.requestSignIn(authorizeInfo);
-            await socketHandler.requestInGame({ name: "CoinTap" });
+            await socketHandler.requestInGame({ name: socketNamespace });
         } catch (err) {
             setError(`Connection failed: ${err}`);
         } finally {
