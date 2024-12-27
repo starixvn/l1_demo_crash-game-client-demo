@@ -15,6 +15,7 @@ export default function SplashPage() {
     const [messages, setMessages] = useState<string[]>([]);
     const [jsonInput, setJsonInput] = useState("");
     const [messageNamespace, setMessageNamespace] = useState("");
+    const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
         setUserAgent(window.navigator.userAgent);
@@ -105,9 +106,7 @@ export default function SplashPage() {
 
         try {
             const token = await getSSOToken();
-
             const authorizeInfo = await authorize(token);
-
             await socketHandler.connect(namespace);
             const socketNamespace = "CoinTap";
             socketHandler.onMessage((event: string, message: object) => {
@@ -116,6 +115,7 @@ export default function SplashPage() {
 
             await socketHandler.requestSignIn(authorizeInfo);
             await socketHandler.requestInGame({ name: socketNamespace });
+            setIsConnected(true);
         } catch (err) {
             setError(`Connection failed: ${err}`);
         } finally {
@@ -141,11 +141,25 @@ export default function SplashPage() {
                 <div className="text-center">
                     <h1 className="text-5xl font-bold text-white mb-2">Crash Game</h1>
                     <p className="text-gray-400">Socket Testing Interface</p>
+
+                    {/* Add Connection Status below header */}
+                    {isConnected && (
+                        <div className="mt-4 flex items-center justify-center space-x-4">
+                            <div className="px-4 py-2 bg-gray-800 rounded-full flex items-center space-x-2">
+                                <span className="text-gray-300">Namespace:</span>
+                                <span className="text-white font-medium">{namespace}</span>
+                            </div>
+                            <div className="px-4 py-2 bg-green-600 rounded-full flex items-center space-x-2">
+                                <div className="w-2 h-2 rounded-full bg-green-300" />
+                                <span className="text-white">Connected</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Main Content Grid */}
-                <div className="grid md:grid-cols-2 gap-8">
-                    {/* Connection Panel */}
+                {/* Main Content Grid - Modified to show/hide based on connection */}
+                {!isConnected ? (
+                    /* Connection Panel */
                     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
                         <h2 className="text-xl font-semibold text-white mb-4">Connection Settings</h2>
                         <form onSubmit={handleConnect} className="space-y-4">
@@ -184,66 +198,57 @@ export default function SplashPage() {
                             </button>
                         </form>
                     </div>
+                ) : (
+                    <div className="space-y-8">
+                        {/* Message Panel - Full Width */}
+                        <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+                            <h2 className="text-xl font-semibold text-white mb-4">Message Console</h2>
+                            <div className="h-[400px] mb-4 overflow-y-auto border border-gray-700 rounded-md p-4 bg-gray-900">
+                                {messages.length === 0 ? (
+                                    <p className="text-gray-500 text-center italic">No messages yet</p>
+                                ) : (
+                                    messages.map((message, index) => (
+                                        <div key={index} className="mb-2 text-sm">
+                                            <span className="text-gray-400">{new Date().toLocaleTimeString()}</span>
+                                            <pre className="text-green-400 mt-1 whitespace-pre-wrap">{message}</pre>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
 
-                    {/* Message Panel */}
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h2 className="text-xl font-semibold text-white mb-4">Message Console</h2>
-                        <div className="h-[200px] mb-4 overflow-y-auto border border-gray-700 rounded-md p-4 bg-gray-900">
-                            {messages.length === 0 ? (
-                                <p className="text-gray-500 text-center italic">No messages yet</p>
-                            ) : (
-                                messages.map((message, index) => (
-                                    <div key={index} className="mb-2 text-sm">
-                                        <span className="text-gray-400">{new Date().toLocaleTimeString()}</span>
-                                        <pre className="text-green-400 mt-1 whitespace-pre-wrap">{message}</pre>
-                                    </div>
-                                ))
-                            )}
+                        {/* Message Input Panel */}
+                        <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+                            <h2 className="text-xl font-semibold text-white mb-4">Send Message</h2>
+                            <div className="space-y-4">
+                                <input
+                                    type="text"
+                                    value={messageNamespace}
+                                    onChange={(e) => setMessageNamespace(e.target.value)}
+                                    placeholder="Enter namespace (default: message)"
+                                    className="w-full p-3 border border-gray-700 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    disabled={!socketHandler.isConnected()}
+                                />
+                                <textarea
+                                    value={jsonInput}
+                                    onChange={(e) => setJsonInput(e.target.value)}
+                                    placeholder="Enter Message"
+                                    className="w-full p-3 h-32 border border-gray-700 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                                    disabled={!socketHandler.isConnected()}
+                                />
+                                <button
+                                    onClick={handleSubmitMessage}
+                                    disabled={!socketHandler.isConnected() || !jsonInput.trim()}
+                                    className="w-full p-3 rounded-md font-medium transition-colors
+                                        bg-green-600 hover:bg-green-700 text-white
+                                        disabled:bg-gray-600 disabled:text-gray-400"
+                                >
+                                    Send Message
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Message Input Panel */}
-                <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-                    <h2 className="text-xl font-semibold text-white mb-4">Send Message</h2>
-                    <div className="space-y-4">
-                        <input
-                            type="text"
-                            value={messageNamespace}
-                            onChange={(e) => setMessageNamespace(e.target.value)}
-                            placeholder="Enter namespace (default: message)"
-                            className="w-full p-3 border border-gray-700 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled={!socketHandler.isConnected()}
-                        />
-                        <textarea
-                            value={jsonInput}
-                            onChange={(e) => setJsonInput(e.target.value)}
-                            placeholder="Enter Message"
-                            className="w-full p-3 h-32 border border-gray-700 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                            disabled={!socketHandler.isConnected()}
-                        />
-                        <button
-                            onClick={handleSubmitMessage}
-                            disabled={!socketHandler.isConnected() || !jsonInput.trim()}
-                            className="w-full p-3 rounded-md font-medium transition-colors
-                                bg-green-600 hover:bg-green-700 text-white
-                                disabled:bg-gray-600 disabled:text-gray-400"
-                        >
-                            Send Message
-                        </button>
-                    </div>
-                </div>
-
-                {/* Connection Status */}
-                <div className="fixed bottom-4 right-4">
-                    <div
-                        className={`px-4 py-2 rounded-full flex items-center space-x-2 
-                        ${socketHandler.isConnected() ? "bg-green-600" : "bg-gray-600"}`}
-                    >
-                        <div className={`w-2 h-2 rounded-full ${socketHandler.isConnected() ? "bg-green-300" : "bg-gray-400"}`} />
-                        <span className="text-white text-sm">{socketHandler.isConnected() ? "Connected" : "Disconnected"}</span>
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     );
