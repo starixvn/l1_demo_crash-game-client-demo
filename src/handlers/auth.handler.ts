@@ -1,43 +1,77 @@
-import { emitSocketEvent } from "@/utils/socket";
+import { AuthResponse } from "@/types/auth";
 
-export interface AuthCredentials {
-    token?: string;
-    userId?: string;
-}
+const SystemInfo = {
+    SC1: {
+        auth: {
+            operatorId: "ONEworks1",
+            operatorSecret: "ONEworks1@20luminet&",
+        },
+        currency: "$US",
+    },
+    VG2: {
+        auth: {
+            operatorId: "ONEworksVGCash",
+            operatorSecret: "VG@SC123",
+        },
+        currency: "INH",
+    },
+};
 
-export class AuthHandler {
-    private static instance: AuthHandler;
-    private credentials: AuthCredentials = {};
-
-    private constructor() {}
-
-    static getInstance(): AuthHandler {
-        if (!this.instance) {
-            this.instance = new AuthHandler();
-        }
-        return this.instance;
-    }
-
-    setCredentials(credentials: AuthCredentials) {
-        this.credentials = credentials;
-    }
-
-    getCredentials(): AuthCredentials {
-        return this.credentials;
-    }
-
-    async signIn(userId: string): Promise<void> {
+export const authHandler = {
+    getSSOToken: async (userAgent: string): Promise<string> => {
         try {
-            await emitSocketEvent("sign_in", { userId });
-            this.setCredentials({ userId });
+            const systemInfo = SystemInfo["SC1"];
+            const requestBody = {
+                playerId: "21031988",
+                playerName: "test21031988",
+                language: "vi-VN",
+                currency: systemInfo.currency,
+                seq: "d,y,lumi",
+                siteId: "4100300",
+                siteName: "lumi",
+                ip: "",
+                browserUserAgent: userAgent,
+                auth: systemInfo.auth,
+                gameId: 0,
+                domain: "example.com",
+                appType: 1,
+            };
+            const response = await fetch(`${process.env.NEXT_PUBLIC_SIMULATOR_URL}/signin/sso`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to get SSO token");
+            }
+
+            const data: AuthResponse = await response.json();
+            return data.token;
         } catch (error) {
-            throw new Error(`Sign in failed: ${error}`);
+            throw new Error(`SSO token error: ${error}`);
         }
-    }
+    },
 
-    isAuthenticated(): boolean {
-        return !!this.credentials.userId;
-    }
-}
+    authorize: async (token: string, userAgent: string): Promise<object> => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/auth/sso?token=${token}&system=1`, {
+                method: "GET",
+                headers: {
+                    "user-agent": userAgent,
+                },
+            });
 
-export const authHandler = AuthHandler.getInstance();
+            if (!response.ok) {
+                throw new Error("Authorization failed");
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw new Error(`Authorization error: ${error}`);
+        }
+    },
+};
