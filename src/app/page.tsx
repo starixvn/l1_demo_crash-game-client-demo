@@ -32,14 +32,13 @@ export const SplashPage = () => {
             const token = await authHandler.getSSOToken(userAgent);
             const authorizeInfo = await authHandler.authorize(token, userAgent);
             await socketHandler.connect(namespace);
-            const socketNamespace = "CoinTap";
 
             socketHandler.onMessage((event: string, message: object) => {
                 setMessages((prev) => [`[${event}] - ${JSON.stringify(message)}`, ...prev]);
             });
 
             await socketHandler.requestSignIn(authorizeInfo);
-            await socketHandler.requestInGame({ name: socketNamespace });
+            await socketHandler.requestInGame({ name: namespace });
             setIsConnected(true);
         } catch (err) {
             setError(`Connection failed: ${err}`);
